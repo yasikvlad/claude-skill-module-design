@@ -1,6 +1,7 @@
 # module-design
 
 > Engineering design methodology as a Claude Code skill.
+> Лендинг: **https://module-design-skill.vercel.app**
 
 Превращает любую задачу разработки в чертёж: **Модуль → Этап → Операция**, с ЦКП на каждом уровне, инверсией от провала, инфраструктурной триадой Config/Client/Storage и шаблоном файловой структуры.
 
