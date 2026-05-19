@@ -64,14 +64,15 @@
 
   ::selection { background: rgba(249,115,22,0.35); color: #fff; }
 
-  /* Grid background */
+  /* Grid background — ALWAYS on a child <div>, never on a section,
+     because mask-image clips the whole element including text. */
   .grid-bg {
     background-image:
       linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
     background-size: 64px 64px;
-    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 0%, transparent 80%);
     -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 0%, transparent 80%);
+            mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 0%, transparent 80%);
   }
 
   .glow-top {
@@ -167,11 +168,14 @@
     grid-column: span 2;
   }
 
-  /* Reduced motion */
+  /* Reduced motion — disable animation but KEEP content visible */
   @media (prefers-reduced-motion: reduce) {
-    .fade-up, .gradient-text, .animate-pulse, .animate-pulse-slow {
+    .fade-up {
       animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
     }
+    .gradient-text, .animate-pulse, .animate-pulse-slow { animation: none !important; }
     * { transition: none !important; }
   }
 </style>
@@ -200,8 +204,9 @@
 </nav>
 
 <!-- HERO — SPLIT LAYOUT -->
-<section class="relative pt-32 lg:pt-36 pb-16 lg:pb-24 px-6 grid-bg overflow-hidden">
-  <div class="glow-top absolute inset-0 pointer-events-none"></div>
+<section class="relative pt-32 lg:pt-36 pb-16 lg:pb-24 px-6 overflow-hidden">
+  <div class="grid-bg absolute inset-0 pointer-events-none" aria-hidden="true"></div>
+  <div class="glow-top absolute inset-0 pointer-events-none" aria-hidden="true"></div>
   <div class="relative max-w-7xl mx-auto grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
 
     <!-- LEFT: text -->
