@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>module-design · Спроектируй модуль за 9 шагов</title>
+<meta name="description" content="Скилл для Claude Code. Декомпозирует любую задачу в Модуль → Этап → Операцию, прогоняет через инверсию и выдаёт готовый design blueprint.">
+
+<meta property="og:title" content="module-design · Скилл для Claude Code">
+<meta property="og:description" content="Спроектируй модуль за 9 шагов — а не за 9 итераций. Декомпозиция, инверсия, чек-листы, готовый чертёж.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0a0a0a">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          accent: '#f97316',
+          'accent-dark': '#ea580c',
+          bg: '#0a0a0a',
+          card: '#141414',
+          'card-hover': '#1a1a1a',
+          border: '#262626',
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  html { scroll-behavior: smooth; }
+  body {
+    background: #0a0a0a;
+    color: #f5f5f5;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center top, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at center top, black 0%, transparent 70%);
+  }
+
+  .glow {
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(249,115,22,0.18), transparent 60%);
+  }
+
+  .card-hover {
+    transition: border-color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+  }
+  .card-hover:hover {
+    border-color: rgba(249,115,22,0.5);
+    background-color: #1a1a1a;
+    transform: translateY(-2px);
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .copy-btn { transition: all 0.15s ease; }
+  .copy-btn:active { transform: scale(0.95); }
+
+  @keyframes blink { 50% { opacity: 0; } }
+  .cursor::after {
+    content: '▊';
+    color: #f97316;
+    animation: blink 1s infinite;
+    margin-left: 4px;
+  }
+
+  /* Smooth fade-in for sections */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.8s ease forwards; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- NAV -->
+<nav class="fixed top-0 left-0 right-0 z-50 bg-bg/70 backdrop-blur-xl border-b border-border">
+  <div class="max-w-6xl mx-auto px-6 py-3.5 flex items-center justify-between">
+    <a href="#" class="flex items-center gap-2 mono font-semibold text-sm">
+      <span class="text-accent">⌘</span>
+      <span>module-design</span>
+    </a>
+    <div class="flex items-center gap-5">
+      <a href="#workflow" class="hidden sm:inline text-sm text-neutral-400 hover:text-white transition">Workflow</a>
+      <a href="#install" class="hidden sm:inline text-sm text-neutral-400 hover:text-white transition">Установить</a>
+      <a href="https://github.com/yasikvlad/claude-skill-module-design" target="_blank" rel="noopener"
+         class="inline-flex items-center gap-2 px-3.5 py-2 bg-white text-black text-sm font-semibold rounded-lg hover:bg-neutral-200 transition">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="relative pt-36 pb-24 px-6 grid-bg overflow-hidden">
+  <div class="glow absolute inset-0 pointer-events-none"></div>
+  <div class="relative max-w-6xl mx-auto text-center">
+    <span class="inline-flex items-center gap-2 px-3 py-1.5 mono text-xs text-accent bg-accent/10 border border-accent/30 rounded-full mb-8">
+      <span class="w-1.5 h-1.5 rounded-full bg-accent" style="box-shadow: 0 0 8px #f97316;"></span>
+      v0.1 · Claude Code Skill
+    </span>
+    <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">
+      Спроектируй модуль<br>
+      <span class="gradient-text">за 9 шагов</span> —<br>
+      а не за 9 итераций
+    </h1>
+    <p class="text-lg md:text-xl text-neutral-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+      Скилл для Claude Code. Декомпозирует любую задачу в
+      <span class="text-white font-medium">Модуль → Этап → Операцию</span>,
+      прогоняет через инверсию и выдаёт готовый чертёж файловой структуры.
+    </p>
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="#install" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-accent text-white font-semibold rounded-lg hover:bg-accent-dark transition">
+        Установить за 30 секунд
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://github.com/yasikvlad/claude-skill-module-design" target="_blank" rel="noopener"
+         class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-card border border-border text-white font-medium rounded-lg hover:border-neutral-500 hover:bg-card-hover transition">
+        Глянуть код
+      </a>
+    </div>
+
+    <!-- Terminal preview -->
+    <div class="mt-16 max-w-2xl mx-auto">
+      <div class="bg-card border border-border rounded-xl overflow-hidden text-left shadow-2xl shadow-accent/5">
+        <div class="flex items-center gap-1.5 px-4 py-3 border-b border-border bg-black/30">
+          <span class="w-3 h-3 rounded-full bg-neutral-700"></span>
+          <span class="w-3 h-3 rounded-full bg-neutral-700"></span>
+          <span class="w-3 h-3 rounded-full bg-neutral-700"></span>
+          <span class="ml-3 mono text-xs text-neutral-500">claude · ~/projects</span>
+        </div>
+        <div class="p-5 mono text-sm leading-relaxed">
+          <div class="text-neutral-500">$ <span class="text-white">claude</span></div>
+          <div class="text-neutral-300 mt-3">› спроектируй модуль парсинга карточек товаров</div>
+          <div class="text-accent/80 mt-2 text-xs">[module-design активирован]</div>
+          <div class="text-neutral-400 mt-2">→ ЦКП: <span class="text-white">ProductProfile с ценой и медиа</span></div>
+          <div class="text-neutral-400">→ Инверсия: <span class="text-white">7 режимов провала, 3 условия</span></div>
+          <div class="text-neutral-400">→ Модули: <span class="text-white">harvester · refiner · enricher</span></div>
+          <div class="text-neutral-400">→ Триада: <span class="text-white">Client на этапе harvester</span></div>
+          <div class="text-neutral-400">→ Шаблон: <span class="text-white">развёрнутая, 3 этапа</span></div>
+          <div class="text-green-400 mt-2 cursor">✓ Blueprint готов · 9/9 шагов</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section class="py-24 px-6 border-t border-border">
+  <div class="max-w-5xl mx-auto">
+    <div class="max-w-3xl mb-14">
+      <span class="mono text-sm text-accent">// Зачем</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-3 leading-tight">
+        Все строят пайплайны<br>на ощупь.
+      </h2>
+      <p class="text-lg text-neutral-400 mt-6 leading-relaxed">
+        А потом — две недели рефактора, потому что «этот класс делает всё подряд»,
+        «непонятно где менять конфиг» и «давайте просто перепишем».
+      </p>
+      <p class="text-lg text-neutral-300 mt-4 leading-relaxed">
+        Скилл превращает «как-нибудь» в жёсткий процесс. На выходе — готовый design blueprint, который не стыдно показать команде.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="text-3xl mb-3">🌀</div>
+        <h3 class="font-semibold text-white mb-2">Границы размыты</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          Модуль <span class="mono text-accent">utils</span> делает всё подряд. Меняется по любому поводу. SRP идёт лесом.
+        </p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="text-3xl mb-3">🪆</div>
+        <h3 class="font-semibold text-white mb-2">Этапы вкладываются</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          Подэтапы в этапах, иерархия плывёт. Через месяц никто не помнит, где живёт логика.
+        </p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="text-3xl mb-3">🩸</div>
+        <h3 class="font-semibold text-white mb-2">Конфиг везде</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          API-ключ дублируется в трёх местах. Client тащит бизнес-логику. Storage не заменишь без боли.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WORKFLOW -->
+<section id="workflow" class="py-24 px-6 border-t border-border">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-16 text-center">
+      <span class="mono text-sm text-accent">// Workflow</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-3 leading-tight">9 шагов до чертежа</h2>
+      <p class="text-lg text-neutral-400 mt-6 max-w-2xl mx-auto">
+        Каждый шаг закрывает конкретное архитектурное решение. Пропустишь — пробьёт через месяц.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 01</div>
+        <h3 class="text-lg font-semibold mb-2">ЦКП системы</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Одно предложение. Конкретный продукт, не процесс. Без чего система мертва — определяешь сразу.</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 02</div>
+        <h3 class="text-lg font-semibold mb-2">Инверсия</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Премортем, необходимые условия, bottleneck, kill criteria. До декомпозиции, не после — пока ресурсы не вложены.</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 03</div>
+        <h3 class="text-lg font-semibold mb-2">Модули</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Один заказчик — одна граница. Контракт = вход + выход + ошибка. Меняется по двум причинам — это два модуля.</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 04</div>
+        <h3 class="text-lg font-semibold mb-2">Этапы</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Тест существительного. Разные слова → граница этапа. Одно слово с прилагательным → не граница.</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 05</div>
+        <h3 class="text-lg font-semibold mb-2">Операции</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Атомарный шаг — один семантический акт. Дальше делить — нерабочие фрагменты.</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 06</div>
+        <h3 class="text-lg font-semibold mb-2">Триада</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Config / Client / Storage. Один владелец на уровне. Не дублируется между модулем и этапом.</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 07</div>
+        <h3 class="text-lg font-semibold mb-2">Шаблон</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Развернуть этап в папку только если есть нагрузка: своя оркестрация, своя триада, нечитаемо в одном файле.</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 08</div>
+        <h3 class="text-lg font-semibold mb-2">Чек-листы</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Модуль / этап / операция. Любой «нет» — единица собрана неверно, перепроектируй.</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="mono text-xs text-accent mb-3">STEP 09</div>
+        <h3 class="text-lg font-semibold mb-2">Инверсионная отчётка</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">Каждый failure mode из шага 2 закрыт конкретной мерой. Никаких «провели премортем и забыли».</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section id="install" class="py-24 px-6 border-t border-border">
+  <div class="max-w-3xl mx-auto">
+    <div class="text-center mb-12">
+      <span class="mono text-sm text-accent">// Установка</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-3 leading-tight">30 секунд — и работает</h2>
+      <p class="text-lg text-neutral-400 mt-6">
+        Одна команда. Никаких npm, pip, docker. Просто клонируешь в папку со скиллами.
+      </p>
+    </div>
+
+    <div class="relative bg-card border border-border rounded-xl overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-border bg-black/30">
+        <span class="mono text-xs text-neutral-500">bash</span>
+        <button id="copyBtn" class="copy-btn flex items-center gap-1.5 mono text-xs text-neutral-400 hover:text-white">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="copyText">Скопировать</span>
+        </button>
+      </div>
+      <pre class="p-5 mono text-sm overflow-x-auto"><code id="installCmd">git clone https://github.com/yasikvlad/claude-skill-module-design ~/.claude/skills/module-design</code></pre>
+    </div>
+
+    <div class="mt-8 space-y-4 text-neutral-400">
+      <div class="flex gap-3">
+        <span class="mono text-accent shrink-0">01.</span>
+        <p>Скопируй команду выше и выполни в терминале.</p>
+      </div>
+      <div class="flex gap-3">
+        <span class="mono text-accent shrink-0">02.</span>
+        <p>Открой Claude Code в любом проекте.</p>
+      </div>
+      <div class="flex gap-3">
+        <span class="mono text-accent shrink-0">03.</span>
+        <p>Напиши <span class="mono text-white bg-card border border-border px-2 py-0.5 rounded">спроектируй модуль X</span> — скилл активируется автоматически.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRIGGERS -->
+<section class="py-24 px-6 border-t border-border">
+  <div class="max-w-5xl mx-auto">
+    <div class="mb-12">
+      <span class="mono text-sm text-accent">// Триггеры</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-3 leading-tight">На что реагирует</h2>
+      <p class="text-lg text-neutral-400 mt-6 max-w-2xl">
+        Не надо вызывать вручную. Claude сам подхватывает скилл, когда видит знакомые формулировки.
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2.5">
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">спроектируй модуль X</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">разложи задачу на этапы</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">это модуль или этап?</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">нужно ли разворачивать этап</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">где жить Config/Client/Storage</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">проведи премортем</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">найди bottleneck</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">определи kill criteria</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">ЦКП этого модуля</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">шаблон модуля</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">триада Config/Client/Storage</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">SRP, изоляция, composability</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">инверсия</span>
+      <span class="mono text-sm px-3.5 py-2 bg-card border border-border rounded-lg">необходимые условия</span>
+    </div>
+  </div>
+</section>
+
+<!-- USE CASES -->
+<section class="py-24 px-6 border-t border-border">
+  <div class="max-w-5xl mx-auto">
+    <div class="mb-12 text-center">
+      <span class="mono text-sm text-accent">// Где работает</span>
+      <h2 class="text-4xl md:text-5xl font-bold mt-3 leading-tight">Применимо везде,<br>где есть модули</h2>
+      <p class="text-lg text-neutral-400 mt-6 max-w-2xl mx-auto">
+        Методология фрактальна — работает на масштабе операции, модуля, продукта, бизнеса.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="text-3xl mb-3">🤖</div>
+        <h3 class="font-semibold text-white mb-2">AI-агенты и пайплайны</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          Sales-bot, content-pipeline, research-agent. Декомпозируешь логику агента в этапы, понимаешь где сидит модель, где промт, где tools.
+        </p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="text-3xl mb-3">🕸️</div>
+        <h3 class="font-semibold text-white mb-2">Парсеры и скрейперы</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          URL → HTML → структура → база. Каждая смена существительного — отдельный этап. Триада на уровне harvester.
+        </p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="text-3xl mb-3">⚙️</div>
+        <h3 class="font-semibold text-white mb-2">ETL и data pipelines</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          Extract → Transform → Load. Чёткие контракты между этапами, понятно где менять формат, где источник, где приёмник.
+        </p>
+      </div>
+      <div class="bg-card border border-border rounded-xl p-6 card-hover">
+        <div class="text-3xl mb-3">🧱</div>
+        <h3 class="font-semibold text-white mb-2">Модульные бэкенды</h3>
+        <p class="text-sm text-neutral-400 leading-relaxed">
+          Auth, billing, notifications. Каждый модуль — чёрный ящик с контрактом. Меняешь Stripe на LemonSqueezy — трогаешь один Client.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="py-24 px-6 border-t border-border">
+  <div class="max-w-3xl mx-auto text-center">
+    <h2 class="text-4xl md:text-5xl font-bold leading-tight">
+      Хватит решать архитектуру<br>в третий раз.
+    </h2>
+    <p class="text-lg text-neutral-400 mt-6 max-w-xl mx-auto">
+      Поставь скилл, прогоняй любую задачу через 9 шагов — получай чертёж, который держит.
+    </p>
+    <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="#install" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-accent text-white font-semibold rounded-lg hover:bg-accent-dark transition">
+        Установить за 30 секунд
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://github.com/yasikvlad/claude-skill-module-design" target="_blank" rel="noopener"
+         class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-card border border-border text-white font-medium rounded-lg hover:border-neutral-500 hover:bg-card-hover transition">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        Star на GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="py-12 px-6 border-t border-border">
+  <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-2 mono text-sm text-neutral-500">
+      <span class="text-accent">⌘</span>
+      <span>module-design</span>
+      <span class="text-neutral-700">·</span>
+      <span>MIT</span>
+    </div>
+    <div class="mono text-sm text-neutral-500">
+      сделал <a href="https://github.com/yasikvlad" target="_blank" rel="noopener" class="text-neutral-300 hover:text-accent transition">@yasikvlad</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const copyBtn = document.getElementById('copyBtn');
+  const copyText = document.getElementById('copyText');
+  const installCmd = document.getElementById('installCmd');
+
+  copyBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(installCmd.textContent.trim());
+      copyText.textContent = 'Скопировано ✓';
+      copyText.classList.add('text-accent');
+      setTimeout(() => {
+        copyText.textContent = 'Скопировать';
+        copyText.classList.remove('text-accent');
+      }, 1800);
+    } catch (e) {
+      copyText.textContent = 'Не вышло';
+      setTimeout(() => { copyText.textContent = 'Скопировать'; }, 1800);
+    }
+  });
+</script>
+
+</body>
+</html>
